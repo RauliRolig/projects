@@ -8,3 +8,5 @@ Sovelluksessa on raakakoodattuna sarjoista tykkääminen. Tykkäykset olisi voin
 ### Rapid API Manga scrapper
 
 https://rapidapi.com/tigaron/api/manga-scrapper
+
+Ei toimi ilman Rapid API key

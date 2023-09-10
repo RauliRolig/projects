@@ -12,7 +12,7 @@
         method: 'GET',
         headers: {
           'X-RapidAPI-Key':
-            '0a23856860msh97e077983000d94p103c62jsn1d93b0372157',
+            ,
           'X-RapidAPI-Host': 'manga-scrapper.p.rapidapi.com',
         },
       }
