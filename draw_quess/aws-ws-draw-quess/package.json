@@ -1,0 +1,16 @@
+{
+  "name": "aws-ws-apigw-simple-sdkv3",
+  "description": "",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "rauli",
+  "license": "ISC",
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.556.0",
+    "@aws-sdk/lib-dynamodb": "^3.556.0",
+    "@aws-sdk/client-apigatewaymanagementapi": "3.556.0"
+  }
+}

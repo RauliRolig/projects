@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Draw and Guess Game</title>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #f0f0f0;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      #container {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+      }
+      #canvasContainer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #canvas {
+        border: 1px solid black;
+        background-color: white;
+        cursor: crosshair;
+        border-radius: 10px;
+      }
+      #nameDisplay {
+        margin-bottom: 10px;
+        font-size: 1.2em;
+        font-weight: bold;
+      }
+      #controls,
+      #nameControls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      #controls input,
+      #controls button,
+      #nameControls input,
+      #nameControls button {
+        padding: 10px;
+        font-size: 1em;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+      #guessListContainer {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      #guessControls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      #guessControls input,
+      #guessControls button {
+        padding: 10px;
+        font-size: 1em;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+      #guessList {
+        background-color: white;
+        border: 1px solid black;
+        padding: 10px;
+        max-height: 480px;
+        overflow-y: auto;
+        width: 200px;
+        border-radius: 10px;
+      }
+      button.clear {
+        background-color: red;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      button.clear:hover {
+        background-color: darkred;
+      }
+      button.submit {
+        background-color: green;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      button.submit:hover {
+        background-color: darkgreen;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Draw and Guess Game</h1>
+    <div id="container">
+      <div id="canvasContainer">
+        <div id="nameDisplay">
+          Your name: <span id="currentName">Not set</span>
+        </div>
+        <div id="nameControls">
+          <input type="text" id="nameInput" placeholder="Enter your name" />
+          <button onclick="setName()">Set Name</button>
+        </div>
+        <canvas id="canvas" width="500" height="500"></canvas>
+        <div id="controls">
+          <button class="clear" onclick="clearCanvas()">Clear Canvas</button>
+        </div>
+      </div>
+      <div id="guessListContainer">
+        <div id="guessControls">
+          <input type="text" id="guessInput" placeholder="Enter your guess" />
+          <button class="submit" onclick="sendGuess()">Submit Guess</button>
+        </div>
+        <div id="guessList">
+          <ul id="guesses"></ul>
+        </div>
+      </div>
+    </div>
+    <script>
+      const ws = new WebSocket(
+        'xxxxxxxx.execute-api.xxxxxxx.amazonaws.com/dev'
+      );
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      let isDrawing = false;
+      let x = 0;
+      let y = 0;
+      let name = '';
+      let color = '';
+
+      ws.onopen = () => {
+        console.log('Connected to server');
+      };
+
+      ws.onmessage = (e) => {
+        console.log(e.data);
+        const clidata = JSON.parse(e.data);
+        if (clidata.type === 'draw') {
+          ctx.beginPath();
+          ctx.strokeStyle = clidata.color;
+          ctx.lineWidth = 5;
+          ctx.moveTo(clidata.x, clidata.y);
+          ctx.lineTo(clidata.x + 1, clidata.y + 1);
+          ctx.stroke();
+          ctx.closePath();
+        } else if (clidata.type === 'guess') {
+          const guessList = document.getElementById('guesses');
+          const listItem = document.createElement('li');
+          listItem.textContent = `${clidata.name}: ${clidata.guess}`;
+          guessList.appendChild(listItem);
+        } else if (clidata.type === 'clear') {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      };
+
+      canvas.onmousedown = () => {
+        if (!name) {
+          alert('Set your name first!');
+          return;
+        }
+        isDrawing = true;
+      };
+
+      canvas.onmousemove = (e) => {
+        if (isDrawing) {
+          x = e.offsetX;
+          y = e.offsetY;
+          let msg = {
+            x: x,
+            y: y,
+            color: color,
+          };
+          ws.send(
+            JSON.stringify({ action: 'draw', data: JSON.stringify(msg) })
+          );
+        }
+      };
+
+      window.onmouseup = () => {
+        if (isDrawing) {
+          isDrawing = false;
+        }
+      };
+
+      function setName() {
+        const nameInput = document.getElementById('nameInput');
+        name = nameInput.value;
+        color = '#' + Math.floor(Math.random() * 16777215).toString(16); // Random color for the user
+        ws.send(
+          JSON.stringify({ action: 'setName', name: name, color: color })
+        );
+        document.getElementById('currentName').textContent = name;
+        nameInput.value = '';
+      }
+
+      function sendGuess() {
+        const guessInput = document.getElementById('guessInput');
+        const guess = guessInput.value;
+        ws.send(JSON.stringify({ action: 'guess', guess: guess }));
+        guessInput.value = '';
+      }
+
+      function clearCanvas() {
+        ws.send(JSON.stringify({ action: 'clear' }));
+      }
+    </script>
+  </body>
+</html>
